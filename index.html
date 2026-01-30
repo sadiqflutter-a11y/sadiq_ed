@@ -111,6 +111,79 @@
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
             transition: 0.3s;
         }
+        
+        .star-rating {
+            color: #fbbf24;
+            display: flex;
+            gap: 2px;
+            cursor: pointer;
+        }
+        
+        .ads-container {
+            margin-top: 100px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .ads-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ad-box {
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ad-my-channel {
+            background: linear-gradient(135deg, #1e3a8a, #4c1d95);
+        }
+        /* ستايل إعلان الأستاذ الممول */
+        
+        .ad-promoted {
+            background: linear-gradient(135deg, #854d0e, #422006);
+            border: 1px solid #fbbf24;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ad-promoted::after {
+            content: "إعلان ممول";
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: #fbbf24;
+            color: black;
+            font-size: 8px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .pulse {
+            animation: pulse-light 2s infinite;
+        }
+        
+        @keyframes pulse-light {
+            0% {
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.8;
+            }
+        }
     </style>
 </head>
 
@@ -130,7 +203,22 @@
         </div>
     </nav>
 
-    <header class="pt-48 pb-10 px-6 text-center">
+    <div class="px-6">
+        <div class="max-w-6xl mx-auto ads-container">
+            <div class="ad-box ad-my-channel">
+                <p class="text-white font-bold mb-2 text-xs md:text-sm">📢 تابع تحديثات المنصة الرسمية</p>
+                <a href="https://whatsapp.com/channel/0029VbC2yvIFy727SBwrto2n" target="_blank" class="bg-white text-blue-900 px-6 py-1 rounded-full font-bold text-[10px] md:text-xs">انضم للقناة</a>
+            </div>
+
+            <div class="ad-box ad-promoted">
+                <p class="text-yellow-200 font-bold mb-1 text-xs md:text-sm pulse">عاجل: بامكانك الان الاعلان</p>
+                <p class="text-white text-[10px] md:text-xs mb-2">نزل الآن محاضرات مراجعة مركزة على قناته</p>
+                <a href="https://api.whatsapp.com/send?phone=9647725889250" target="_blank" class="bg-yellow-500 text-black px-4 py-1 rounded-full font-bold text-[10px] hover:bg-white transition-all">تواصل مع الأستاذ / أعلن هنا</a>
+            </div>
+        </div>
+    </div>
+
+    <header class="pt-10 pb-10 px-6 text-center">
         <h1 class="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight">مدرسك.. <span class="gradient-text">صار بفرعكم</span></h1>
         <p class="text-gray-400 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">المنصة التعليمية الأولى للبحث عن المدرسين الأقرب لمنزلك.</p>
     </header>
@@ -191,7 +279,8 @@
                 <select id="tArea" class="input-clear">
                     <option value="">اختر المنطقة</option>
                 </select>
-                <input type="tel" id="tPhone" class="input-clear" placeholder="رقم الواتساب (11 رقم)" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                <input type="tel" id="tPhone" class="input-clear" placeholder="رقم الواتساب (11 رقم)" maxlength="11">
+                <input type="text" id="tTelegram" class="input-clear" placeholder="معرف التليجرام (بدون @)">
                 <input type="password" id="tPin" class="input-clear" placeholder="رمز PIN خاص بك">
                 <textarea id="tPackage" class="input-clear" rows="3" placeholder="تفاصيل الدورة (الموقع، السعر، الأوقات)..."></textarea>
                 <button id="publishBtn" onclick="saveTeacher()" class="btn-primary w-full py-3 font-bold">نشر المعلومات</button>
@@ -260,19 +349,6 @@
                 let otherOpt = new Option("أخرى (اكتب منطقتك يدوياً)", "other_custom");
                 areaSelect.add(otherOpt);
             }
-            areaSelect.onchange = function() {
-                if (this.value === "other_custom") {
-                    let custom = prompt("يرجى كتابة اسم منطقتك:");
-                    if (custom && custom.trim() !== "") {
-                        let newOpt = new Option(custom, custom);
-                        this.add(newOpt, this.options[this.length - 1]);
-                        this.value = custom;
-                    } else {
-                        this.value = "";
-                    }
-                }
-                if (targetId === 'filterArea') filterTeachers();
-            };
         }
 
         db.ref('teachers').on('value', (s) => {
@@ -288,15 +364,16 @@
                 city: document.getElementById('tCity').value,
                 area: document.getElementById('tArea').value,
                 phone: document.getElementById('tPhone').value.trim(),
+                telegram: document.getElementById('tTelegram').value.trim(),
                 pin: document.getElementById('tPin').value.trim(),
                 package: document.getElementById('tPackage').value.trim()
             };
             if (!data.name || !data.subject || !data.city || !data.area || data.phone.length !== 11 || !data.pin || !data.package) {
-                alert("يرجى التأكد من ملء جميع الحقول وأن رقم الهاتف 11 رقماً.");
+                alert("يرجى ملء جميع الحقول الضرورية.");
                 return;
             }
             const ref = key ? db.ref('teachers/' + key) : db.ref('teachers').push();
-            ref.set(data).then(() => {
+            ref.update(data).then(() => {
                 alert("تم الحفظ بنجاح!");
                 toggleModal(false);
             });
@@ -311,11 +388,7 @@
                     id: k
                 }))
                 .filter(t => (city === "" || t.city === city) && (area === "" || t.area === area) && (sub === "" || t.subject.includes(sub)) && (t.name.toLowerCase().includes(keyw)));
-
-            const header = document.getElementById('resultsHeader');
-            const countBadge = document.getElementById('teacherCount');
-            header.innerText = city ? `مدرسي ${city} ${area ? '- ' + area : ''}` : "نخبة مدرسي العراق";
-            countBadge.innerText = arr.length;
+            document.getElementById('teacherCount').innerText = arr.length;
             displayTeachers(arr);
         }
 
@@ -323,73 +396,84 @@
             const list = document.getElementById('teachersList');
             list.innerHTML = data.length ? '' : '<p class="col-span-full text-center text-gray-500 py-10">لا توجد نتائج بحث حالياً.</p>';
             data.reverse().forEach(t => {
-                const p = t.phone.startsWith('0') ? '964' + t.phone.substring(1) : t.phone;
-                list.innerHTML += `
+                        const p = t.phone.startsWith('0') ? '964' + t.phone.substring(1) : t.phone;
+                        const rating = t.stars ? (t.stars / t.voters).toFixed(1) : "0.0";
+                        const voters = t.voters || 0;
+
+                        list.innerHTML += `
                     <div class="teacher-card text-right">
-                        <div class="mb-4 text-[10px] text-blue-400 font-bold">${t.city} • ${t.area}</div>
+                        <div class="flex justify-between items-start mb-4">
+                             <div class="text-[10px] text-blue-400 font-bold">${t.city} • ${t.area}</div>
+                             <div class="star-rating" onclick="rateTeacher('${t.id}')">
+                                <span class="text-xs text-gray-400 ml-1">(${voters})</span>
+                                <span class="text-sm font-bold ml-1">${rating}</span>
+                                <i class="fas fa-star"></i>
+                             </div>
+                        </div>
                         <h3 class="font-bold text-xl mb-1">${t.name}</h3>
                         <p class="text-blue-500 font-bold text-sm mb-4">${t.subject}</p>
-                        <div class="bg-white/5 p-4 rounded-xl text-xs text-gray-400 mb-6 min-h-[80px]">${t.package}</div>
-                        <div class="flex gap-2">
-                            <a href="https://api.whatsapp.com/send?phone=${p}" target="_blank" class="flex-1 text-center py-3 bg-green-600/20 text-green-400 rounded-xl text-sm font-bold">واتساب</a>
-                            <a href="tel:${t.phone}" class="w-12 flex items-center justify-center bg-blue-600/20 text-blue-400 rounded-xl"><i class="fas fa-phone"></i></a>
+                        <div class="bg-white/5 p-4 rounded-xl text-xs text-gray-400 mb-6 min-h-[80px] whitespace-pre-line">${t.package}</div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="https://api.whatsapp.com/send?phone=${p}" target="_blank" class="flex-1 text-center py-3 bg-green-600/20 text-green-400 rounded-xl text-xs font-bold"><i class="fab fa-whatsapp"></i> واتساب</a>
+                            ${t.telegram ? `<a href="https://t.me/${t.telegram}" target="_blank" class="flex-1 text-center py-3 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-bold"><i class="fab fa-telegram"></i> تليجرام</a>` : ''}
+                            <a href="tel:${t.phone}" class="w-12 flex items-center justify-center bg-gray-600/20 text-white rounded-xl"><i class="fas fa-phone"></i></a>
                         </div>
-                    </div>`;
-            });
+                    </div>`;      
+            });    
         }
 
-        function toggleModal(show) {
-            document.getElementById('registerModal').classList.toggle('active', show);
+        function rateTeacher(id) {
+            const stars = prompt("قيم الأستاذ من 1 إلى 5 نجوم:");
+            const val = parseInt(stars);
+            if (val >= 1 && val <= 5) {
+                const t = allTeachersRaw[id];
+                const newStars = (t.stars || 0) + val;
+                const newVoters = (t.voters || 0) + 1;
+                db.ref('teachers/' + id).update({ stars: newStars, voters: newVoters });
+                alert("شكراً لتقييمك!");
+            } else if(stars) {
+                alert("يرجى إدخال رقم بين 1 و 5");
+            }
         }
 
-        function openAddModal() {
-            document.getElementById('editKey').value = "";
-            ['tName', 'tSubject', 'tPhone', 'tPin', 'tPackage', 'tCity', 'tArea'].forEach(f => document.getElementById(f).value = "");
-            toggleModal(true);
+        function toggleModal(show) { document.getElementById('registerModal').classList.toggle('active', show); }
+
+        function openAddModal() {      
+            document.getElementById('editKey').value = "";      
+            ['tName', 'tSubject', 'tPhone', 'tTelegram', 'tPin', 'tPackage', 'tCity', 'tArea'].forEach(f => document.getElementById(f).value = "");      
+            toggleModal(true);    
         }
 
-        // الدالة المحدثة: تشمل خيار التعديل أو الحذف بعد التأكد من الرمز
-        function checkAndEdit() {
-            const phone = prompt("أدخل رقم هاتفك:");
-            const found = Object.entries(allTeachersRaw).find(([k, v]) => v.phone === phone);
-
-            if (found && prompt("أدخل الرمز:") === found[1].pin) {
-                const [key, data] = found;
-
-                // سؤال المستخدم عن الإجراء
-                const action = confirm("تم التحقق بنجاح!\n\n- اضغط (OK) لتعديل بياناتك.\n- اضغط (Cancel) لحذف حسابك نهائياً.");
-
+        function checkAndEdit() {      
+            const phone = prompt("أدخل رقم هاتفك:");      
+            const found = Object.entries(allTeachersRaw).find(([k, v]) => v.phone === phone);      
+            if (found && prompt("أدخل الرمز:") === found[1].pin) {        
+                const [key, data] = found;        
+                const action = confirm("تم التحقق! موافق للتعديل، إلغاء للحذف.");
                 if (action) {
-                    // فتح نافذة التعديل
-                    document.getElementById('editKey').value = key;
-                    document.getElementById('tName').value = data.name;
-                    document.getElementById('tSubject').value = data.subject;
-                    document.getElementById('tCity').value = data.city;
-                    updateAreaOptions('tArea', data.city);
-                    document.getElementById('tArea').value = data.area;
-                    document.getElementById('tPhone').value = data.phone;
-                    document.getElementById('tPin').value = data.pin;
-                    document.getElementById('tPackage').value = data.package;
-                    toggleModal(true);
+                    document.getElementById('editKey').value = key;        
+                    document.getElementById('tName').value = data.name;        
+                    document.getElementById('tSubject').value = data.subject;        
+                    document.getElementById('tCity').value = data.city;        
+                    updateAreaOptions('tArea', data.city);        
+                    document.getElementById('tArea').value = data.area;        
+                    document.getElementById('tPhone').value = data.phone;        
+                    document.getElementById('tTelegram').value = data.telegram || "";        
+                    document.getElementById('tPin').value = data.pin;        
+                    document.getElementById('tPackage').value = data.package;        
+                    toggleModal(true);        
                 } else {
-                    // تنفيذ عملية الحذف
-                    if (confirm(`هل أنت متأكد من حذف بيانات الأستاذ (${data.name})؟`)) {
-                        db.ref('teachers/' + key).remove().then(() => {
-                            alert("تم حذف البيانات بنجاح.");
-                        });
-                    }
+                    if (confirm("حذف الحساب نهائياً؟")) db.ref('teachers/' + key).remove();
                 }
-            } else {
-                alert("خطأ في رقم الهاتف أو الرمز السري.");
-            }
+            } else { alert("بيانات خاطئة!"); }    
         }
 
-        function showAdminPanel() {
-            if (prompt("رمز الإدارة:") === "2026") {
-                let msg = "";
-                Object.values(allTeachersRaw).forEach(t => msg += `${t.name}: ${t.pin}\n`);
-                alert(msg);
-            }
+        function showAdminPanel() {      
+            if (prompt("رمز الإدارة:") === "2026") {        
+                let msg = "";        
+                Object.values(allTeachersRaw).forEach(t => msg += `${t.name}: ${t.pin}\n`);        
+                alert(msg);      
+            }    
         }
     </script>
 </body>
