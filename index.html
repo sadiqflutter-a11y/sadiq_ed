@@ -147,7 +147,6 @@
         .ad-my-channel {
             background: linear-gradient(135deg, #1e3a8a, #4c1d95);
         }
-        /* ستايل إعلان الأستاذ الممول */
         
         .ad-promoted {
             background: linear-gradient(135deg, #854d0e, #422006);
@@ -183,6 +182,10 @@
             100% {
                 opacity: 0.8;
             }
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -276,9 +279,11 @@
                 <select id="tCity" class="input-clear" onchange="updateAreaOptions('tArea', this.value)">
                     <option value="">اختر المحافظة</option>
                 </select>
-                <select id="tArea" class="input-clear">
+                <select id="tArea" class="input-clear" onchange="checkCustomArea(this.value)">
                     <option value="">اختر المنطقة</option>
                 </select>
+                <input type="text" id="tCustomArea" class="input-clear hidden" placeholder="اكتب منطقتك هنا...">
+
                 <input type="tel" id="tPhone" class="input-clear" placeholder="رقم الواتساب (11 رقم)" maxlength="11">
                 <input type="text" id="tTelegram" class="input-clear" placeholder="معرف التليجرام (بدون @)">
                 <input type="password" id="tPin" class="input-clear" placeholder="رمز PIN خاص بك">
@@ -336,9 +341,23 @@
         }
         initDropdowns();
 
+        // دالة لإظهار حقل الإدخال اليدوي
+        function checkCustomArea(val) {
+            const customInput = document.getElementById('tCustomArea');
+            if (val === "other_custom") {
+                customInput.classList.remove('hidden');
+            } else {
+                customInput.classList.add('hidden');
+                customInput.value = "";
+            }
+        }
+
         function updateAreaOptions(targetId, city) {
             const areaSelect = document.getElementById(targetId);
             areaSelect.innerHTML = '<option value="">اختر المنطقة</option>';
+
+            if (targetId === 'tArea') document.getElementById('tCustomArea').classList.add('hidden');
+
             if (areasData[city]) {
                 areasData[city].sort().forEach(area => {
                     let opt = new Option(area, area);
@@ -358,24 +377,32 @@
 
         function saveTeacher() {
             const key = document.getElementById('editKey').value;
+
+            let selectedArea = document.getElementById('tArea').value;
+            if (selectedArea === "other_custom") {
+                selectedArea = document.getElementById('tCustomArea').value.trim();
+            }
+
             const data = {
                 name: document.getElementById('tName').value.trim(),
                 subject: document.getElementById('tSubject').value.trim(),
                 city: document.getElementById('tCity').value,
-                area: document.getElementById('tArea').value,
+                area: selectedArea,
                 phone: document.getElementById('tPhone').value.trim(),
                 telegram: document.getElementById('tTelegram').value.trim(),
                 pin: document.getElementById('tPin').value.trim(),
                 package: document.getElementById('tPackage').value.trim()
             };
+
             if (!data.name || !data.subject || !data.city || !data.area || data.phone.length !== 11 || !data.pin || !data.package) {
-                alert("يرجى ملء جميع الحقول الضرورية.");
+                alert("يرجى ملء جميع الحقول الضرورية (تأكد من كتابة المنطقة).");
                 return;
             }
             const ref = key ? db.ref('teachers/' + key) : db.ref('teachers').push();
             ref.update(data).then(() => {
                 alert("تم الحفظ بنجاح!");
                 toggleModal(false);
+                document.getElementById('tCustomArea').classList.add('hidden');
             });
         }
 
@@ -436,11 +463,14 @@
             }
         }
 
-        function toggleModal(show) { document.getElementById('registerModal').classList.toggle('active', show); }
+        function toggleModal(show) { 
+            document.getElementById('registerModal').classList.toggle('active', show); 
+            if(!show) document.getElementById('tCustomArea').classList.add('hidden');
+        }
 
         function openAddModal() {      
             document.getElementById('editKey').value = "";      
-            ['tName', 'tSubject', 'tPhone', 'tTelegram', 'tPin', 'tPackage', 'tCity', 'tArea'].forEach(f => document.getElementById(f).value = "");      
+            ['tName', 'tSubject', 'tPhone', 'tTelegram', 'tPin', 'tPackage', 'tCity', 'tArea', 'tCustomArea'].forEach(f => document.getElementById(f).value = "");      
             toggleModal(true);    
         }
 
@@ -455,8 +485,18 @@
                     document.getElementById('tName').value = data.name;        
                     document.getElementById('tSubject').value = data.subject;        
                     document.getElementById('tCity').value = data.city;        
-                    updateAreaOptions('tArea', data.city);        
-                    document.getElementById('tArea').value = data.area;        
+                    updateAreaOptions('tArea', data.city);
+                    
+                    // التحقق إذا كانت المنطقة مخزنة كـ "أخرى"
+                    const areaExists = Array.from(document.getElementById('tArea').options).some(opt => opt.value === data.area);
+                    if(areaExists) {
+                        document.getElementById('tArea').value = data.area;
+                    } else {
+                        document.getElementById('tArea').value = "other_custom";
+                        document.getElementById('tCustomArea').value = data.area;
+                        document.getElementById('tCustomArea').classList.remove('hidden');
+                    }
+                    
                     document.getElementById('tPhone').value = data.phone;        
                     document.getElementById('tTelegram').value = data.telegram || "";        
                     document.getElementById('tPin').value = data.pin;        
